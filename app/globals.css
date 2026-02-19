@@ -1,0 +1,183 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: #FAFAFB;
+  --foreground: #0B1220;
+  --card: #FFFFFF;
+  --card-foreground: #0B1220;
+  --popover: #FFFFFF;
+  --popover-foreground: #0B1220;
+  --primary: #2563EB;
+  --primary-foreground: #FFFFFF;
+  --secondary: #22C55E;
+  --secondary-foreground: #FFFFFF;
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
+  --accent: #EEF2FF;
+  --accent-foreground: #0B1220;
+  --destructive: #EF4444;
+  --destructive-foreground: #FFFFFF;
+  --border: #E6E8EE;
+  --input: #E6E8EE;
+  --ring: #2563EB;
+  --chart-1: #2563EB;
+  --chart-2: #22C55E;
+  --chart-3: #0B1220;
+  --chart-4: #64748B;
+  --chart-5: #334155;
+  --radius: 0.625rem;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #0B1220;
+  --sidebar-primary: #2563EB;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #EEF2FF;
+  --sidebar-accent-foreground: #0B1220;
+  --sidebar-border: #E6E8EE;
+  --sidebar-ring: #2563EB;
+  /* iOS 26 glass (glassmorphism) */
+  --glass-bg: rgba(255, 255, 255, 0.65);
+  --glass-bg-scrolled: rgba(255, 255, 255, 0.82);
+  --glass-border: rgba(0, 0, 0, 0.06);
+  --glass-ring: rgba(255, 255, 255, 0.7);
+  --glass-shadow:
+    0 0 0 1px var(--glass-ring),
+    0 2px 8px rgba(0, 0, 0, 0.04),
+    0 8px 32px rgba(0, 0, 0, 0.06);
+  --glass-shadow-scrolled:
+    0 0 0 1px var(--glass-ring),
+    0 4px 12px rgba(0, 0, 0, 0.06),
+    0 12px 40px rgba(0, 0, 0, 0.1);
+}
+
+.dark {
+  --glass-bg: rgba(28, 28, 30, 0.65);
+  --glass-bg-scrolled: rgba(28, 28, 30, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-ring: rgba(255, 255, 255, 0.06);
+  --glass-shadow:
+    0 0 0 1px var(--glass-ring),
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    0 8px 32px rgba(0, 0, 0, 0.3);
+  --glass-shadow-scrolled:
+    0 0 0 1px var(--glass-ring),
+    0 4px 12px rgba(0, 0, 0, 0.3),
+    0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
+@theme inline {
+  --font-sans: 'Inter', 'Inter Fallback', sans-serif;
+  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    scroll-behavior: smooth;
+    /* Reserverar plats för scrollbar så att nav inte "hoppar" när t.ex. Select-dropdown öppnas */
+    scrollbar-gutter: stable;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+@layer utilities {
+  .card-hover {
+    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg;
+    transition-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
+  }
+  .card-hover-subtle {
+    @apply transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md;
+    transition-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
+  }
+  .btn-hover {
+    @apply transition-all duration-200;
+    transition-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
+  }
+  .btn-hover:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+  }
+  .btn-hover:active {
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(1deg); }
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-float-slow {
+  animation: float-slow 8s ease-in-out infinite;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 4s ease-in-out infinite;
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 8s ease infinite;
+}
