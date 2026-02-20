@@ -8,13 +8,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { sendQuoteEmail } from "@/app/actions/send-quote"
 import {
   Form,
   FormControl,
@@ -29,8 +23,8 @@ import {
   ChevronRight,
   Send,
   User,
-  Briefcase,
-  Wallet,
+  Globe,
+  Paintbrush,
   ClipboardCheck,
   Sparkles,
 } from "lucide-react"
@@ -43,10 +37,9 @@ const formSchema = z.object({
     .min(1, "Ange din e-postadress")
     .email("Ange en giltig e-postadress"),
   phone: z.string(),
-  service: z.string().min(1, "Välj en tjänst"),
-  description: z.string().min(10, "Beskriv ditt projekt (minst 10 tecken)"),
-  budget: z.string().min(1, "Välj ett budgetintervall"),
-  timeline: z.string().min(1, "Välj när du vill starta"),
+  websiteUrl: z.string(),
+  designPreferences: z.string(),
+  desiredFeatures: z.string(),
 })
 
 type FormData = z.infer<typeof formSchema>
@@ -58,14 +51,14 @@ const STEPS = [
     icon: User,
   },
   {
-    title: "Ditt projekt",
-    description: "Beskriv vad du behöver",
-    icon: Briefcase,
+    title: "Nuvarande hemsida",
+    description: "Har du en befintlig webbplats?",
+    icon: Globe,
   },
   {
-    title: "Budget & tidplan",
-    description: "Praktiska detaljer",
-    icon: Wallet,
+    title: "Designpreferenser",
+    description: "Hur vill du att sidan ska se ut?",
+    icon: Paintbrush,
   },
   {
     title: "Granska & skicka",
@@ -76,41 +69,10 @@ const STEPS = [
 
 const STEP_FIELDS: (keyof FormData)[][] = [
   ["name", "email"],
-  ["service", "description"],
-  ["budget", "timeline"],
+  [],
+  [],
   [],
 ]
-
-const SERVICE_OPTIONS = [
-  { value: "new-website", label: "Ny webbplats" },
-  { value: "redesign", label: "Omdesign av befintlig webbplats" },
-  { value: "ecommerce", label: "E-handel / Webbshop" },
-  { value: "seo", label: "SEO & Sökmotoroptimering" },
-  { value: "branding", label: "Digitalt varumärke & Design" },
-  { value: "other", label: "Annat" },
-]
-
-const BUDGET_OPTIONS = [
-  { value: "10k-30k", label: "10 000 – 30 000 kr" },
-  { value: "30k-75k", label: "30 000 – 75 000 kr" },
-  { value: "75k-150k", label: "75 000 – 150 000 kr" },
-  { value: "150k+", label: "150 000+ kr" },
-]
-
-const TIMELINE_OPTIONS = [
-  { value: "asap", label: "Så snart som möjligt" },
-  { value: "1-month", label: "Inom 1 månad" },
-  { value: "1-3-months", label: "Inom 1–3 månader" },
-  { value: "3-6-months", label: "Inom 3–6 månader" },
-  { value: "no-rush", label: "Ingen brådska" },
-]
-
-function getOptionLabel(
-  value: string,
-  options: { value: string; label: string }[],
-) {
-  return options.find((o) => o.value === value)?.label ?? value
-}
 
 export function QuoteForm() {
   const [currentStep, setCurrentStep] = useState(0)
@@ -124,10 +86,9 @@ export function QuoteForm() {
       company: "",
       email: "",
       phone: "",
-      service: "",
-      description: "",
-      budget: "",
-      timeline: "",
+      websiteUrl: "",
+      designPreferences: "",
+      desiredFeatures: "",
     },
     mode: "onTouched",
   })
@@ -145,9 +106,20 @@ export function QuoteForm() {
     setCurrentStep((s) => s - 1)
   }
 
-  function onSubmit(data: FormData) {
-    console.log("Form data:", data)
-    setSubmitted(true)
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function onSubmit(data: FormData) {
+    setSending(true)
+    setError(null)
+    const result = await sendQuoteEmail(data)
+    setSending(false)
+
+    if (result.success) {
+      setSubmitted(true)
+    } else {
+      setError(result.error ?? "Något gick fel. Försök igen.")
+    }
   }
 
   if (submitted) {
@@ -256,8 +228,8 @@ export function QuoteForm() {
             )}
           >
             {currentStep === 0 && <StepPersonalInfo form={form} />}
-            {currentStep === 1 && <StepProjectDetails form={form} />}
-            {currentStep === 2 && <StepBudgetTimeline form={form} />}
+            {currentStep === 1 && <StepWebsiteUrl form={form} />}
+            {currentStep === 2 && <StepDesignPreferences form={form} />}
             {currentStep === 3 && <StepReview form={form} />}
           </div>
 
@@ -289,12 +261,16 @@ export function QuoteForm() {
                 <ChevronRight className="size-4" />
               </Button>
             ) : (
-              <Button type="submit" size="lg" className="h-11">
-                Skicka förfrågan
-                <Send className="size-4" />
+              <Button type="submit" size="lg" className="h-11" disabled={sending}>
+                {sending ? "Skickar..." : "Skicka förfrågan"}
+                {!sending && <Send className="size-4" />}
               </Button>
             )}
           </div>
+
+          {error && (
+            <p className="mt-4 text-center text-sm text-destructive">{error}</p>
+          )}
         </form>
       </Form>
     </div>
@@ -388,55 +364,31 @@ function StepPersonalInfo({ form }: { form: UseFormReturn<FormData> }) {
   )
 }
 
-function StepProjectDetails({ form }: { form: UseFormReturn<FormData> }) {
+function StepWebsiteUrl({ form }: { form: UseFormReturn<FormData> }) {
   return (
     <div className="flex flex-col gap-5">
       <FormField
         control={form.control}
-        name="service"
+        name="websiteUrl"
         render={({ field }) => (
           <FormItem>
             <FormLabel>
-              Vad behöver du hjälp med?{" "}
-              <span className="text-destructive">*</span>
-            </FormLabel>
-            <Select
-              onValueChange={field.onChange}
-              value={field.value || undefined}
-            >
-              <FormControl>
-                <SelectTrigger className="h-11 w-full">
-                  <SelectValue placeholder="Välj en tjänst" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {SERVICE_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      <FormField
-        control={form.control}
-        name="description"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>
-              Beskriv ditt projekt{" "}
-              <span className="text-destructive">*</span>
+              Nuvarande hemsida{" "}
+              <span className="font-normal text-muted-foreground">
+                (valfritt)
+              </span>
             </FormLabel>
             <FormControl>
-              <Textarea
-                placeholder="Berätta om ditt projekt, dina mål och vad du förväntar dig..."
-                className="min-h-32 resize-none"
+              <Input
+                type="url"
+                placeholder="https://www.dinhemsida.se"
+                className="h-11"
                 {...field}
               />
             </FormControl>
+            <p className="text-xs text-muted-foreground">
+              Om du redan har en hemsida kan vi titta på den för att bättre förstå dina behov.
+            </p>
             <FormMessage />
           </FormItem>
         )}
@@ -445,64 +397,49 @@ function StepProjectDetails({ form }: { form: UseFormReturn<FormData> }) {
   )
 }
 
-function StepBudgetTimeline({ form }: { form: UseFormReturn<FormData> }) {
+function StepDesignPreferences({ form }: { form: UseFormReturn<FormData> }) {
   return (
     <div className="flex flex-col gap-5">
       <FormField
         control={form.control}
-        name="budget"
+        name="designPreferences"
         render={({ field }) => (
           <FormItem>
             <FormLabel>
-              Budgetintervall <span className="text-destructive">*</span>
+              Designpreferenser{" "}
+              <span className="font-normal text-muted-foreground">
+                (valfritt)
+              </span>
             </FormLabel>
-            <Select
-              onValueChange={field.onChange}
-              value={field.value || undefined}
-            >
-              <FormControl>
-                <SelectTrigger className="h-11 w-full">
-                  <SelectValue placeholder="Välj ett intervall" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {BUDGET_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <FormControl>
+              <Textarea
+                placeholder="Beskriv hur du vill att din hemsida ska se ut, t.ex. stil, färger, inspiration från andra sajter..."
+                className="min-h-28 resize-none"
+                {...field}
+              />
+            </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
       <FormField
         control={form.control}
-        name="timeline"
+        name="desiredFeatures"
         render={({ field }) => (
           <FormItem>
             <FormLabel>
-              När vill du komma igång?{" "}
-              <span className="text-destructive">*</span>
+              Önskade funktioner{" "}
+              <span className="font-normal text-muted-foreground">
+                (valfritt)
+              </span>
             </FormLabel>
-            <Select
-              onValueChange={field.onChange}
-              value={field.value || undefined}
-            >
-              <FormControl>
-                <SelectTrigger className="h-11 w-full">
-                  <SelectValue placeholder="Välj en tidsplan" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {TIMELINE_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <FormControl>
+              <Textarea
+                placeholder="T.ex. kontaktformulär, bokningssystem, bildgalleri, blogg, kundrecensioner..."
+                className="min-h-28 resize-none"
+                {...field}
+              />
+            </FormControl>
             <FormMessage />
           </FormItem>
         )}
@@ -530,31 +467,28 @@ function StepReview({ form }: { form: UseFormReturn<FormData> }) {
       ],
     },
     {
-      title: "Projektdetaljer",
-      icon: Briefcase,
+      title: "Nuvarande hemsida",
+      icon: Globe,
       items: [
         {
-          label: "Tjänst",
-          value: getOptionLabel(values.service, SERVICE_OPTIONS),
-        },
-        {
-          label: "Beskrivning",
-          value: values.description,
-          multiline: true,
+          label: "URL",
+          value: values.websiteUrl || "Ingen angiven",
         },
       ],
     },
     {
-      title: "Budget & tidplan",
-      icon: Wallet,
+      title: "Design & funktioner",
+      icon: Paintbrush,
       items: [
         {
-          label: "Budget",
-          value: getOptionLabel(values.budget, BUDGET_OPTIONS),
+          label: "Design",
+          value: values.designPreferences || "Inga angivna",
+          multiline: true,
         },
         {
-          label: "Tidsplan",
-          value: getOptionLabel(values.timeline, TIMELINE_OPTIONS),
+          label: "Funktioner",
+          value: values.desiredFeatures || "Inga angivna",
+          multiline: true,
         },
       ],
     },
